@@ -107,6 +107,9 @@ export async function PUT(
       });
 
       return updated;
+    }, {
+      maxWait: 5000,
+      timeout: 10000
     });
 
     return NextResponse.json(procurement);

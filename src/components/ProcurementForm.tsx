@@ -7,7 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { Plus, Trash2, Loader2, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import EmployeeSearchModal from './EmployeeSearchModal';
 
 const formSchema = z.object({
   creatorEmpId: z.string().min(1, 'จำเป็นต้องระบุ'),
@@ -30,36 +31,18 @@ type FormValues = z.infer<typeof formSchema>;
 interface ProcurementFormProps {
   initialData?: FormValues & { id: string };
 }
-
-// Component to fetch and display Employee Info
-function EmployeeInfo({ empId, onEmployeeFound }: { empId: string, onEmployeeFound?: (data: any) => void }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['employee', empId],
-    queryFn: async () => {
-      if (!empId) return null;
-      const res = await axios.get(`/api/employees/${empId}`);
-      return res.data;
-    },
-    enabled: !!empId && empId.length >= 4,
-    retry: false,
-  });
-
-  useEffect(() => {
-    if (data && onEmployeeFound) {
-      onEmployeeFound(data);
-    }
-  }, [data, onEmployeeFound]);
-
-  if (!empId || empId.length < 4) return null;
-  if (isLoading) return <span className="text-sm text-gray-500 ml-2 animate-pulse">กำลังโหลดข้อมูล...</span>;
-  if (error) return <span className="text-sm text-red-500 ml-2">ไม่พบข้อมูลพนักงาน</span>;
-  return null;
-}
-
 export default function ProcurementForm({ initialData }: ProcurementFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [isSearching, setIsSearching] = useState<string | null>(null);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalData, setModalData] = useState<any>(null);
+  const [modalTarget, setModalTarget] = useState<'creator' | number | null>(null);
+
+  const isEditMode = !!initialData;
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -103,8 +86,40 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
     }
   };
 
+  const handleSearchEmployee = async (empId: string, index?: number) => {
+    if (!empId) {
+      window.alert('กรุณากรอกรหัสพนักงานก่อนค้นหา');
+      return;
+    }
+    
+    setIsSearching(index !== undefined ? `committee-${index}` : 'creator');
+    try {
+      const res = await axios.get(`/api/employees/${empId}`);
+      setModalData(res.data);
+      setModalTarget(index !== undefined ? index : 'creator');
+      setIsModalOpen(true);
+    } catch (error) {
+      window.alert(`ไม่พบข้อมูลพนักงานรหัส ${empId}`);
+    } finally {
+      setIsSearching(null);
+    }
+  };
+
+  const handleSelectEmployee = (data: any) => {
+    if (modalTarget === 'creator') {
+      setValue('creatorName', data.name);
+      setValue('creatorPosition', data.position);
+      setValue('creatorDepartmentName', data.departmentName);
+    } else if (typeof modalTarget === 'number') {
+      setValue(`committee.${modalTarget}.name`, data.name);
+      setValue(`committee.${modalTarget}.position`, data.position);
+      setValue(`committee.${modalTarget}.departmentName`, data.departmentName);
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+    <>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
 
       {submitError && (
         <div className="bg-red-50 text-red-700 p-4 rounded-lg border border-red-200">
@@ -138,16 +153,19 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                 <input
                   type="text"
                   {...register('creatorEmpId')}
-                  className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                  readOnly={isEditMode}
+                  className={`bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                 />
-                <EmployeeInfo
-                  empId={watchCreatorEmpId}
-                  onEmployeeFound={useCallback((data: any) => {
-                    setValue('creatorName', data.name);
-                    setValue('creatorPosition', data.position);
-                    setValue('creatorDepartmentName', data.departmentName);
-                  }, [setValue])}
-                />
+                {!isEditMode && (
+                  <button
+                    type="button"
+                    onClick={() => handleSearchEmployee(watchCreatorEmpId)}
+                    disabled={isSearching === 'creator' || !watchCreatorEmpId}
+                    className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                  >
+                    {isSearching === 'creator' ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ค้นหา'}
+                  </button>
+                )}
               </div>
               {errors.creatorEmpId && <p className="mt-1 text-sm text-red-600">{errors.creatorEmpId.message}</p>}
             </div>
@@ -158,7 +176,8 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                 <input
                   type="text"
                   {...register('creatorName')}
-                  className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                  readOnly={true}
+                  className="bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md py-2 px-3 border"
                 />
               </div>
               {errors.creatorName && <p className="mt-1 text-sm text-red-600">{errors.creatorName.message}</p>}
@@ -170,7 +189,8 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                 <input
                   type="text"
                   {...register('creatorPosition')}
-                  className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                  readOnly={true}
+                  className="bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md py-2 px-3 border"
                 />
               </div>
               {errors.creatorPosition && <p className="mt-1 text-sm text-red-600">{errors.creatorPosition.message}</p>}
@@ -182,7 +202,8 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                 <input
                   type="text"
                   {...register('creatorDepartmentName')}
-                  className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
+                  readOnly={true}
+                  className="bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md py-2 px-3 border"
                 />
               </div>
               {errors.creatorDepartmentName && <p className="mt-1 text-sm text-red-600">{errors.creatorDepartmentName.message}</p>}
@@ -236,14 +257,14 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                         className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
                         placeholder="เช่น 1001"
                       />
-                      <EmployeeInfo
-                        empId={watchedEmpId}
-                        onEmployeeFound={useCallback((data: any) => {
-                          setValue(`committee.${index}.name`, data.name);
-                          setValue(`committee.${index}.position`, data.position);
-                          setValue(`committee.${index}.departmentName`, data.departmentName);
-                        }, [setValue, index])}
-                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSearchEmployee(watchedEmpId, index)}
+                        disabled={isSearching === `committee-${index}` || !watchedEmpId}
+                        className="ml-2 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                      >
+                        {isSearching === `committee-${index}` ? <Loader2 className="h-4 w-4 animate-spin" /> : 'ค้นหา'}
+                      </button>
                     </div>
                     {errors.committee?.[index]?.empId && (
                       <p className="mt-1 text-sm text-red-600">{errors.committee[index]?.empId?.message}</p>
@@ -261,30 +282,42 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">ชื่อ-นามสกุล *</label>
-                    <input
-                      {...register(`committee.${index}.name`)}
-                      className="mt-1 bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
-                    />
+                    <div className="mt-1">
+                      <input
+                        type="text"
+                        {...register(`committee.${index}.name`)}
+                        readOnly={true}
+                        className="bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md py-2 px-3 border"
+                      />
+                    </div>
                     {errors.committee?.[index]?.name && (
                       <p className="mt-1 text-sm text-red-600">{errors.committee[index]?.name?.message}</p>
                     )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700">ตำแหน่ง *</label>
-                    <input
-                      {...register(`committee.${index}.position`)}
-                      className="mt-1 bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
-                    />
+                    <div className="mt-1">
+                      <input
+                        type="text"
+                        {...register(`committee.${index}.position`)}
+                        readOnly={true}
+                        className="bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md py-2 px-3 border"
+                      />
+                    </div>
                     {errors.committee?.[index]?.position && (
                       <p className="mt-1 text-sm text-red-600">{errors.committee[index]?.position?.message}</p>
                     )}
                   </div>
                   <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700">ฝ่าย/แผนก *</label>
-                    <input
-                      {...register(`committee.${index}.departmentName`)}
-                      className="mt-1 bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
-                    />
+                    <div className="mt-1">
+                      <input
+                        type="text"
+                        {...register(`committee.${index}.departmentName`)}
+                        readOnly={true}
+                        className="bg-gray-100 text-gray-500 cursor-not-allowed shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm rounded-md py-2 px-3 border"
+                      />
+                    </div>
                     {errors.committee?.[index]?.departmentName && (
                       <p className="mt-1 text-sm text-red-600">{errors.committee[index]?.departmentName?.message}</p>
                     )}
@@ -333,5 +366,14 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
         </button>
       </div>
     </form>
+    {modalData && (
+      <EmployeeSearchModal
+        isOpen={isModalOpen}
+        initialData={modalData}
+        onClose={() => setIsModalOpen(false)}
+        onSelect={handleSelectEmployee}
+      />
+    )}
+  </>
   );
 }

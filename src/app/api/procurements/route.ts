@@ -72,6 +72,9 @@ export async function POST(request: Request) {
           committee: true
         }
       });
+    }, {
+      maxWait: 5000,
+      timeout: 10000
     });
 
     return NextResponse.json(procurement, { status: 201 });
