@@ -197,7 +197,7 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">ฝ่าย/แผนก *</label>
+              <label className="block text-sm font-medium text-gray-700">สังกัด *</label>
               <div className="mt-1">
                 <input
                   type="text"
@@ -308,8 +308,8 @@ export default function ProcurementForm({ initialData }: ProcurementFormProps) {
                       <p className="mt-1 text-sm text-red-600">{errors.committee[index]?.position?.message}</p>
                     )}
                   </div>
-                  <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700">ฝ่าย/แผนก *</label>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">สังกัด *</label>
                     <div className="mt-1">
                       <input
                         type="text"

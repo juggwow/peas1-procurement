@@ -129,7 +129,7 @@ export default function EmployeeSearchModal({
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">ฝ่าย/แผนก</label>
+                  <label className="block text-sm font-medium text-gray-700">สังกัด</label>
                   <input
                     type="text"
                     name="departmentName"
