@@ -33,7 +33,12 @@ export default async function EditProcurementPage({
         </Link>
         <h1 className="text-2xl font-bold text-gray-900">Edit Procurement</h1>
       </div>
-      <ProcurementForm initialData={procurement} />
+      <ProcurementForm 
+        initialData={{
+          ...procurement,
+          orderNumber: procurement.orderNumber || undefined
+        }} 
+      />
     </div>
   );
 }
