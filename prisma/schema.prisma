@@ -11,7 +11,7 @@ datasource db {
   provider = "postgresql"
 }
 
-model Procurement {
+model Screening {
   id                    String   @id @default(uuid())
   creatorEmpId          String
   creatorName           String
@@ -32,9 +32,9 @@ model CommitteeMember {
   name           String
   departmentName String
   role           String
-  procurementId  String
+  screeningId    String
 
-  procurement Procurement @relation(fields: [procurementId], references: [id], onDelete: Cascade)
+  screening Screening @relation(fields: [screeningId], references: [id], onDelete: Cascade)
 }
 
 model Employee {

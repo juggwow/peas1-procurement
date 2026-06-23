@@ -6,11 +6,11 @@ import { useRouter } from 'next/navigation';
 import { Edit2, Trash2 } from 'lucide-react';
 import axios from 'axios';
 
-export default function ProcurementRowActions({ 
-  procurementId, 
+export default function ScreeningRowActions({ 
+  screeningId, 
   creatorEmpId 
 }: { 
-  procurementId: string;
+  screeningId: string;
   creatorEmpId: string;
 }) {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function ProcurementRowActions({
 
     try {
       setIsDeleting(true);
-      await axios.delete(`/api/procurements/${procurementId}`, {
+      await axios.delete(`/api/screenings/${screeningId}`, {
         data: { creatorEmpId: input }
       });
       router.refresh();
@@ -43,7 +43,7 @@ export default function ProcurementRowActions({
   return (
     <div className="flex items-center justify-end space-x-3">
       <Link 
-        href={`/procurements/${procurementId}/edit`} 
+        href={`/screenings/${screeningId}/edit`} 
         className="text-indigo-600 hover:text-indigo-900 inline-flex items-center"
       >
         <Edit2 className="h-4 w-4 mr-1" />

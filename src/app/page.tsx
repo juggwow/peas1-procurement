@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Plus, Search } from 'lucide-react';
 import { format } from 'date-fns';
 import prisma from '@/lib/prisma';
-import ProcurementRowActions from '@/components/ProcurementRowActions';
+import ScreeningRowActions from '@/components/ScreeningRowActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +20,9 @@ export default async function Home({
     where.committee = { some: { empId: { contains: committeeEmpId, mode: 'insensitive' } } };
   }
 
-  let procurements: any[] = [];
+  let screenings: any[] = [];
   try {
-    procurements = await prisma.procurement.findMany({
+    screenings = await prisma.screening.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: { committee: true }
@@ -34,9 +34,9 @@ export default async function Home({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">รายการจัดซื้อจัดจ้าง</h1>
+        <h1 className="text-2xl font-bold text-gray-900">รายการกลั่นกรอง</h1>
         <Link 
-          href="/procurements/new" 
+          href="/screenings/new" 
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
         >
           <Plus className="h-4 w-4 mr-2" />
@@ -89,7 +89,7 @@ export default async function Home({
       </div>
 
       <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
-        {procurements.length > 0 ? (
+        {screenings.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -102,18 +102,18 @@ export default async function Home({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {procurements.map((proc) => (
-                  <tr key={proc.id} className="hover:bg-gray-50">
+                {screenings.map((scr) => (
+                  <tr key={scr.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{proc.title}</div>
-                      {proc.orderNumber && <div className="text-sm text-gray-500">เลขที่คำสั่ง: {proc.orderNumber}</div>}
+                      <div className="text-sm font-medium text-gray-900">{scr.title}</div>
+                      {scr.orderNumber && <div className="text-sm text-gray-500">เลขที่คำสั่ง: {scr.orderNumber}</div>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {proc.creatorName}
+                      {scr.creatorName}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
                       <div className="flex flex-col gap-1 w-64">
-                        {proc.committee.map((c: any) => (
+                        {scr.committee.map((c: any) => (
                           <div key={c.id} className="flex items-center text-xs">
                             <span className="inline-block w-16 font-medium text-indigo-700 bg-indigo-50 px-1 py-0.5 rounded mr-2 text-center">
                               {c.role === 'CHAIRMAN' ? 'ประธาน' : 'กรรมการ'}
@@ -124,10 +124,10 @@ export default async function Home({
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {format(new Date(proc.createdAt), 'dd MMM yyyy')}
+                      {format(new Date(scr.createdAt), 'dd MMM yyyy')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <ProcurementRowActions procurementId={proc.id} creatorEmpId={proc.creatorEmpId} />
+                      <ScreeningRowActions screeningId={scr.id} creatorEmpId={scr.creatorEmpId} />
                     </td>
                   </tr>
                 ))}
@@ -136,8 +136,8 @@ export default async function Home({
           </div>
         ) : (
           <div className="text-center py-12">
-            <h3 className="mt-2 text-sm font-medium text-gray-900">ไม่มีรายการจัดซื้อจัดจ้าง</h3>
-            <p className="mt-1 text-sm text-gray-500">เริ่มต้นด้วยการสร้างรายการจัดซื้อจัดจ้างใหม่</p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">ไม่มีรายการกลั่นกรอง</h3>
+            <p className="mt-1 text-sm text-gray-500">เริ่มต้นด้วยการสร้างรายการกลั่นกรองใหม่</p>
           </div>
         )}
       </div>

@@ -1,19 +1,19 @@
-import ProcurementForm from '@/components/ProcurementForm';
+import ScreeningForm from '@/components/ScreeningForm';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import prisma from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 
-export default async function EditProcurementPage({
+export default async function EditScreeningPage({
   params
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params;
   
-  let procurement;
+  let screening;
   try {
-    procurement = await prisma.procurement.findUnique({
+    screening = await prisma.screening.findUnique({
       where: { id },
       include: { committee: true }
     });
@@ -21,7 +21,7 @@ export default async function EditProcurementPage({
     console.error("Database connection failed:", error);
   }
 
-  if (!procurement) {
+  if (!screening) {
     notFound();
   }
 
@@ -31,12 +31,12 @@ export default async function EditProcurementPage({
         <Link href="/" className="text-gray-500 hover:text-gray-700 mr-4">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Edit Procurement</h1>
+        <h1 className="text-2xl font-bold text-gray-900">แก้ไขรายการกลั่นกรอง</h1>
       </div>
-      <ProcurementForm 
+      <ScreeningForm 
         initialData={{
-          ...procurement,
-          orderNumber: procurement.orderNumber || undefined
+          ...screening,
+          orderNumber: screening.orderNumber || undefined
         }} 
       />
     </div>

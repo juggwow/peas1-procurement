@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
-const createProcurementSchema = z.object({
+const updateScreeningSchema = z.object({
   creatorEmpId: z.string().min(1, 'Creator Emp ID is required'),
   creatorName: z.string().min(1, 'Creator Name is required'),
   creatorPosition: z.string().min(1, 'Creator Position is required'),
   creatorDepartmentName: z.string().min(1, 'Creator Department is required'),
   title: z.string().min(1, 'Title is required'),
-  orderNumber: z.string().optional(),
+  orderNumber: z.string().optional().nullable(),
   committee: z.array(z.object({
     empId: z.string().min(1, 'Employee ID is required'),
     role: z.string().min(1, 'Role is required'),
@@ -18,12 +18,38 @@ const createProcurementSchema = z.object({
   })).min(3, 'At least 3 committee members are required').max(5, 'At most 5 committee members are allowed')
 });
 
-export async function POST(request: Request) {
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const body = await request.json();
-    const parsed = createProcurementSchema.parse(body);
+    const { id } = await params;
+    const screening = await prisma.screening.findUnique({
+      where: { id },
+      include: { committee: true }
+    });
 
-    const procurement = await prisma.$transaction(async (tx) => {
+    if (!screening) {
+      return NextResponse.json({ error: 'Screening not found' }, { status: 404 });
+    }
+
+    return NextResponse.json(screening);
+  } catch (error) {
+    console.error('Failed to fetch screening:', error);
+    return NextResponse.json({ error: 'Failed to fetch screening' }, { status: 500 });
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const body = await request.json();
+    const parsed = updateScreeningSchema.parse(body);
+
+    const screening = await prisma.$transaction(async (tx) => {
       // Update creator employee
       await tx.employee.update({
         where: { id: parsed.creatorEmpId },
@@ -50,7 +76,14 @@ export async function POST(request: Request) {
         });
       }
 
-      return await tx.procurement.create({
+      // Delete existing committee members
+      await tx.committeeMember.deleteMany({
+        where: { screeningId: id }
+      });
+
+      // Update screening and create new committee members
+      const updated = await tx.screening.update({
+        where: { id },
         data: {
           creatorEmpId: parsed.creatorEmpId,
           creatorName: parsed.creatorName,
@@ -72,12 +105,14 @@ export async function POST(request: Request) {
           committee: true
         }
       });
+
+      return updated;
     }, {
       maxWait: 5000,
       timeout: 10000
     });
 
-    return NextResponse.json(procurement, { status: 201 });
+    return NextResponse.json(screening);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Validation Error', details: error.issues }, { status: 400 });
@@ -85,47 +120,43 @@ export async function POST(request: Request) {
     if (error.message && error.message.startsWith('ไม่พบรหัสพนักงาน')) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    console.error('Failed to create procurement:', error);
-    return NextResponse.json({ error: 'Failed to create procurement' }, { status: 500 });
+    console.error('Failed to update screening:', error);
+    return NextResponse.json({ error: 'Failed to update screening' }, { status: 500 });
   }
 }
 
-export async function GET(request: Request) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
-    const { searchParams } = new URL(request.url);
-    const creatorEmpId = searchParams.get('creatorEmpId');
-    const committeeEmpId = searchParams.get('committeeEmpId');
-    const title = searchParams.get('title');
+    const { id } = await params;
+    const body = await request.json();
+    const { creatorEmpId } = body;
 
-    const where: any = {};
-
-    if (creatorEmpId) {
-      where.creatorEmpId = { contains: creatorEmpId, mode: 'insensitive' };
+    if (!creatorEmpId) {
+      return NextResponse.json({ error: 'Creator Emp ID is required for deletion' }, { status: 400 });
     }
 
-    if (title) {
-      where.title = { contains: title, mode: 'insensitive' };
-    }
-
-    if (committeeEmpId) {
-      where.committee = {
-        some: {
-          empId: { contains: committeeEmpId, mode: 'insensitive' }
-        }
-      };
-    }
-
-    const procurements = await prisma.procurement.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: {
-        committee: true,
-      }
+    const screening = await prisma.screening.findUnique({
+      where: { id }
     });
 
-    return NextResponse.json(procurements);
+    if (!screening) {
+      return NextResponse.json({ error: 'Screening not found' }, { status: 404 });
+    }
+
+    if (screening.creatorEmpId !== creatorEmpId) {
+      return NextResponse.json({ error: 'Unauthorized: Invalid creator employee ID' }, { status: 403 });
+    }
+
+    await prisma.screening.delete({
+      where: { id }
+    });
+
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to fetch procurements:', error);
-    return NextResponse.json({ error: 'Failed to fetch procurements' }, { status: 500 });
+    console.error('Failed to delete screening:', error);
+    return NextResponse.json({ error: 'Failed to delete screening' }, { status: 500 });
   }
 }

@@ -9,7 +9,7 @@ export default function Navbar() {
           <div className="flex">
             <Link href="/" className="flex flex-shrink-0 items-center gap-2">
               <ClipboardList className="h-8 w-8 text-indigo-600" />
-              <span className="font-bold text-xl tracking-tight text-gray-900">ระบบบันทึกคณะกรรมการจัดซื้อจัดจ้าง</span>
+              <span className="font-bold text-xl tracking-tight text-gray-900">ระบบบันทึกคณะกรรมการกลั่นกรอง กรรมการจำหน่าย</span>
             </Link>
           </div>
         </div>
