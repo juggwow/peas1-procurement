@@ -10,7 +10,7 @@ export default async function EditScreeningPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params;
-  
+
   let screening;
   try {
     screening = await prisma.screening.findUnique({
@@ -31,13 +31,13 @@ export default async function EditScreeningPage({
         <Link href="/" className="text-gray-500 hover:text-gray-700 mr-4">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">แก้ไขรายการกลั่นกรอง</h1>
+        <h1 className="text-2xl font-bold text-gray-900">แก้ไขรายการ</h1>
       </div>
-      <ScreeningForm 
+      <ScreeningForm
         initialData={{
           ...screening,
           orderNumber: screening.orderNumber || undefined
-        }} 
+        }}
       />
     </div>
   );

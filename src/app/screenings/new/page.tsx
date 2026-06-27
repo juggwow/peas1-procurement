@@ -9,7 +9,7 @@ export default function NewScreeningPage() {
         <Link href="/" className="text-gray-500 hover:text-gray-700 mr-4">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">สร้างรายการกลั่นกรอง</h1>
+        <h1 className="text-2xl font-bold text-gray-900">สร้างรายการ</h1>
       </div>
       <ScreeningForm />
     </div>
