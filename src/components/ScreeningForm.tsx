@@ -134,13 +134,13 @@ export default function ScreeningForm({ initialData }: ScreeningFormProps) {
 
           <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700">ชื่องานกลั่นกรอง *</label>
+              <label className="block text-sm font-medium text-gray-700">ชื่อการไฟฟ้า *</label>
               <div className="mt-1">
                 <input
                   type="text"
                   {...register('title')}
                   className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
-                  placeholder="เช่น จัดซื้ออุปกรณ์คอมพิวเตอร์"
+                  placeholder="เช่น กฟจ.ระยอง"
                 />
               </div>
               {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>}
@@ -208,18 +208,6 @@ export default function ScreeningForm({ initialData }: ScreeningFormProps) {
                 </div>
                 {errors.creatorDepartmentName && <p className="mt-1 text-sm text-red-600">{errors.creatorDepartmentName.message}</p>}
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">เลขที่คำสั่ง</label>
-              <div className="mt-1">
-                <input
-                  type="text"
-                  {...register('orderNumber')}
-                  className="bg-white text-black shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md py-2 px-3 border"
-                />
-              </div>
-              {errors.orderNumber && <p className="mt-1 text-sm text-red-600">{errors.orderNumber.message}</p>}
             </div>
           </div>
         </div>
